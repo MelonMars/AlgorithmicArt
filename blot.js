@@ -22,7 +22,6 @@ function makeBlock(startPos, bw, bh) {
   blk.forward(bw)
   blk.left(90)
   blk.forward(bh)
-  console.log("Lines: " + blk.lines())
   return (blk.lines())
 }
 
@@ -31,15 +30,18 @@ function makeCar(startPos, carL, carH) {
   car.up()
   car.goTo(startPos)
   car.down()
-  for (let i = 0; i < carH; i++) {
-    car.forward(carL)
-    car.left(90)
-    car.forward(jmpHeight)
-    car.left(90)
-    car.forward(carL)
-    car.right(180)
-  }
-  drawLines(car.lines())
+  let [x, y] = startPos
+  drawLines(
+    [[startPos, [x, y + carH]],
+    [[x, y + carH],[x + carL, y + carH]
+    ],
+    [
+      [x + carL, y + carH],
+      [x + carL, y],
+      [
+        [x + carL, y], startPos
+      ]
+    ]]);
   return 0;
 }
 
@@ -71,39 +73,65 @@ function allPtsAllowed(pts, alloPts) {
   return true;
 }
 
-
+function getRandElem(arr) {
+  const randI = Math.floor(Math.random() * arr.length);
+  return arr[randI].slice();
+}
 
 const ptsOutBlk = []
 const ptsInBlk = []
 for (let x = 0; x < screenWidth; x++) {
   for (let y = 0; y < screenHeight; y++) {
     if (insideBlock(x, y)) {
-      ptsInBlk.push([
+      ptsInBlk.push(
         [x, y]
-      ])
+      )
     } else {
-      ptsOutBlk.push([
+      ptsOutBlk.push(
         [x, y]
-      ])
+      )
     }
+  }
+}
+
+const cycleWidth = blockWidth + streetSize
+const cycleHeight = blockHeight + streetSize
+const blkXs = []
+const blkYs = []
+for (let x = 0; x < screenWidth; x++) {
+  if (x % cycleWidth < blockWidth) {
+    blkXs.push(x)
+  }
+}
+for (let y = 0; y < screenHeight; y++) {
+  if (y % cycleHeight < blockHeight) {
+    blkYs.push(y)
   }
 }
 
 const range = streetSize / 2
 const vertCarPts = []
 const horCarPts = []
-let blkXs = ptsInBlk.map(pair => pair[0]);
-console.log("Points out Block: ", ptsOutBlk);
-console.log("Points in Block: ", ptsInBlk);
-console.log("Block Xs: ", blkXs)
+const glitchPts = [] // THESE SHOULDN'T EXIST
 for (let pt of ptsOutBlk) {
   let [x, y] = pt
-  if (x in blkXs) {
-    horCarPts.push([x,y])
+  console.log("x: ", x)
+  console.log("y: ", y)
+  if (blkYs.includes(y)) {
+    vertCarPts.push([x, y])
   } else {
-    vertCarPts.push([x,y])
+    horCarPts.push([x, y])
   }
 }
 
-console.log("Vertical Points: " + vertCarPts)
-console.log("Horizontal Points: " + horCarPts)
+for (let horCar = 0; horCar < nBlocks; horCar++) {
+  for (let i = 0; i < nCars; i++) {
+    makeCar(getRandElem(horCarPts), carLength, carHeight)
+  }
+}
+
+for (let vertCar = 0; vertCar < nBlocks; vertCar++) {
+  for (let i = 0; i < nCars; i++) {
+    makeCar(getRandElem(vertCarPts), carHeight, carLength)
+  }
+}
