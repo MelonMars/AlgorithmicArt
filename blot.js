@@ -7,7 +7,6 @@ const screenWidth = nBlocks * (blockWidth + streetSize);
 const carHeight = 5; //Height of each car
 const carLength = 5; //Length of each car
 const nCars = 5 //Number of cars, similar to number of blocks
-const carVertChance = 0.5; //Chance that the car is drawn vertically rather than horizontally
 const jmpHeight = 0.3; // How far the turtle goes up for each U-turn in the car
 setDocDimensions(screenWidth, screenHeight);
 
@@ -32,7 +31,7 @@ function makeCar(startPos, carL, carH) {
   car.up()
   car.goTo(startPos)
   car.down()
-  for (let i=0; i<carH;i++) {
+  for (let i = 0; i < carH; i++) {
     car.forward(carL)
     car.left(90)
     car.forward(jmpHeight)
@@ -40,7 +39,8 @@ function makeCar(startPos, carL, carH) {
     car.forward(carL)
     car.right(180)
   }
-  return car.lines()
+  drawLines(car.lines())
+  return 0;
 }
 
 const blocks = []
@@ -50,7 +50,7 @@ for (let blkVert = 0; blkVert < nBlocks; blkVert++) {
   }
 }
 for (const block of blocks) {
- drawLines(block)
+  drawLines(block, { "fill": "green" })
 }
 
 function insideBlock(x, y) {
@@ -62,23 +62,48 @@ function insideBlock(x, y) {
   return (lclX < blockWidth) && (lclY < blockHeight)
 }
 
+function allPtsAllowed(pts, alloPts) {
+  for (let pt of pts) {
+    if (!alloPts.some(allowPt => alloPts[0] === pt[0] && alloPts[1] === pt[1])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+
 const ptsOutBlk = []
 const ptsInBlk = []
-for (let x=0;x<screenWidth;x++) {
-  for (let y=0;y<screenHeight;y++) {
+for (let x = 0; x < screenWidth; x++) {
+  for (let y = 0; y < screenHeight; y++) {
     if (insideBlock(x, y)) {
-      ptsInBlk.push([x,y])
+      ptsInBlk.push([
+        [x, y]
+      ])
+    } else {
+      ptsOutBlk.push([
+        [x, y]
+      ])
+    }
+  }
+}
+
+const range = streetSize / 2
+const vertCarPts = []
+const horCarPts = []
+let blkXs = ptsInBlk.map(pair => pair[0]);
+console.log("Points out Block: ", ptsOutBlk);
+console.log("Points in Block: ", ptsInBlk);
+console.log("Block Xs: ", blkXs)
+for (let pt of ptsOutBlk) {
+  let [x, y] = pt
+  if (x in blkXs) {
+    horCarPts.push([x,y])
   } else {
-     ptsOutBlk.push([x,y])
+    vertCarPts.push([x,y])
   }
 }
 
-for (let carVert = 0; carVert<nCars; carVert++) {
-  for (let carHor = 0; carHor<nCars; carHor++) {
-    drawLines(makeCar([10,10], carLength, carHeight))
-  }
-}
-
-console.log("Inside: "+ insideBlock(0,0)); 
-console.log("Inside: "+ insideBlock(10,10)); 
-console.log("Inside: "+ insideBlock(59, 58));
+console.log("Vertical Points: " + vertCarPts)
+console.log("Horizontal Points: " + horCarPts)
