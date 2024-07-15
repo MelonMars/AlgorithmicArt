@@ -1,14 +1,25 @@
+/*
+Cyberpunk City by github.com/MelonMars
+
+Designed to keep it all chaotic
+Cars are supposed to be like above the street and stuff
+*/
+
 const blockWidth = 50; //Width of a block
 const blockHeight = 50; //Height of a block
 const nBlocks = 5; // Number of blocks on each row and height
 const streetSize = 20; //Thickness of the street
 const screenHeight = nBlocks * (blockHeight + streetSize);
 const screenWidth = nBlocks * (blockWidth + streetSize);
-const carHeight = 5; //Height of each car
-const carLength = 5; //Length of each car
+const carHeight = 1; //Height of each car
+const carLength = 10; //Length of each car
 const nCars = 5 //Number of cars, similar to number of blocks
-const jmpHeight = 0.3; // How far the turtle goes up for each U-turn in the car
 setDocDimensions(screenWidth, screenHeight);
+
+function getRandElem(arr) {
+  const randI = Math.floor(Math.random() * arr.length);
+  return arr[randI].slice();
+}
 
 function makeBlock(startPos, bw, bh) {
   const blk = new bt.Turtle()
@@ -31,18 +42,11 @@ function makeCar(startPos, carL, carH) {
   car.goTo(startPos)
   car.down()
   let [x, y] = startPos
-  drawLines(
+  return(
     [[startPos, [x, y + carH]],
-    [[x, y + carH],[x + carL, y + carH]
-    ],
-    [
-      [x + carL, y + carH],
-      [x + carL, y],
-      [
-        [x + carL, y], startPos
-      ]
-    ]]);
-  return 0;
+    [[x, y + carH],[x + carL, y + carH]],
+    [[x + carL, y + carH],[x + carL, y]],
+    [[x + carL, y], startPos]]);
 }
 
 const blocks = []
@@ -50,9 +54,6 @@ for (let blkVert = 0; blkVert < nBlocks; blkVert++) {
   for (let blkHor = 0; blkHor < nBlocks; blkHor++) {
     blocks.push(makeBlock([blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)], blockWidth, blockHeight))
   }
-}
-for (const block of blocks) {
-  drawLines(block, { "fill": "green" })
 }
 
 function insideBlock(x, y) {
@@ -71,11 +72,6 @@ function allPtsAllowed(pts, alloPts) {
     }
   }
   return true;
-}
-
-function getRandElem(arr) {
-  const randI = Math.floor(Math.random() * arr.length);
-  return arr[randI].slice();
 }
 
 const ptsOutBlk = []
@@ -112,7 +108,6 @@ for (let y = 0; y < screenHeight; y++) {
 const range = streetSize / 2
 const vertCarPts = []
 const horCarPts = []
-const glitchPts = [] // THESE SHOULDN'T EXIST
 for (let pt of ptsOutBlk) {
   let [x, y] = pt
   console.log("x: ", x)
@@ -124,14 +119,21 @@ for (let pt of ptsOutBlk) {
   }
 }
 
+const cars = []
 for (let horCar = 0; horCar < nBlocks; horCar++) {
   for (let i = 0; i < nCars; i++) {
-    makeCar(getRandElem(horCarPts), carLength, carHeight)
+    cars.push(makeCar(getRandElem(horCarPts), carLength, carHeight))
   }
 }
 
 for (let vertCar = 0; vertCar < nBlocks; vertCar++) {
   for (let i = 0; i < nCars; i++) {
-    makeCar(getRandElem(vertCarPts), carHeight, carLength)
+    cars.push(makeCar(getRandElem(vertCarPts), carHeight, carLength))
   }
+}
+
+const blockCols = ["green", "red", "black", "blue", "orange", "navy", "pink", "purple"]
+blocks.push(...cars)
+for (const block of blocks) {
+  drawLines(block, { "fill": getRandElem(blockCols) })
 }
