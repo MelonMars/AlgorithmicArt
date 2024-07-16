@@ -3,14 +3,20 @@ Cyberpunk City by github.com/MelonMars
 */
 
 const blockWidth = 50; //Width of a block
-const blockHeight = 70; //Height of a block
-const nBlocks = 5; // Number of blocks on each row and height
-const streetSize = 5; //Thickness of the street
+const blockHeight = 50; //Height of a block
+const nBlocks = 7; // Number of blocks on each row and height
+const streetSize = 10; //Thickness of the street
 const screenHeight = nBlocks * (blockHeight + streetSize);
 const screenWidth = nBlocks * (blockWidth + streetSize);
 const carHeight = 1; //Height of each car
 const carLength = 10; //Length of each car
 const nCars = 5 //Number of cars, similar to number of blocks
+const skyScraperChance = 0.3
+const skyScraperJumps = 5 // How many tiers you want in your tiered skyscraper
+const skyScraperReductionFactor = 0.4;
+const colorCars = false
+const colorBuildings = false
+const colorBackground = false
 setDocDimensions(screenWidth, screenHeight);
 
 function getRandElem(arr) {
@@ -38,20 +44,42 @@ function makeCar(startPos, carL, carH) {
   car.up()
   car.goTo(startPos)
   car.down()
-  let [x, y] = startPos
-  return(
-    [[startPos, [x, y + carH]],
-    [[x, y + carH],[x + carL, y + carH]],
-    [[x + carL, y + carH],[x + carL, y]],
-    [[x + carL, y], startPos]]);
+  car.forward(carL)
+  car.left(90)
+  car.forward(carH)
+  car.left(90)
+  car.forward(carL)
+  car.left(90)
+  car.forward(carH)
+  return (car.lines())  
 }
 
 const blocks = []
 for (let blkVert = 0; blkVert < nBlocks; blkVert++) {
   for (let blkHor = 0; blkHor < nBlocks; blkHor++) {
-    blocks.push(makeBlock([blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)], blockWidth, blockHeight))
+    if (bt.randInRange(0, 1) < skyScraperChance) {
+      let startPos = [blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)];
+      let currentW = blockWidth;
+      let currentH = blockHeight;
+
+      for (let jump = 0; jump < skyScraperJumps; jump++) {
+        blocks.push(makeBlock(startPos, currentW, currentH));
+
+        const wRed = currentW * skyScraperReductionFactor;
+        const hRed = currentH * skyScraperReductionFactor;
+
+        currentW -= wRed;
+        currentH -= hRed;
+
+        startPos[0] += wRed / 2;
+        startPos[1] += hRed / 2;
+      }
+    } else {
+      blocks.push(makeBlock([blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)], blockWidth, blockHeight));
+    }
   }
 }
+
 
 function insideBlock(x, y) {
   const colI = Math.floor(x / (blockWidth + streetSize))
@@ -129,7 +157,7 @@ for (let vertCar = 0; vertCar < nBlocks; vertCar++) {
   }
 }
 
-const blockCols = ["green", "red", "black", "blue", "orange", "navy", "pink", "purple"]
+const Cols = ["green", "red", "black", "blue", "orange", "navy", "pink", "purple"]
 
 const border = new bt.Turtle()
 border.goTo([0,0])
@@ -140,9 +168,28 @@ border.left(90)
 border.forward(screenWidth)
 border.left(90)
 border.forward(screenHeight)
-drawLines(border.lines(), { "fill": getRandElem(blockCols) })
+if (colorBackground) {
+  drawLines(border.lines(), { "fill": getRandElem(Cols) })
+} else {
+  drawLines(border.lines())
+}
 
-blocks.push(...cars)
-for (const block of blocks) {
-  drawLines(block, { "fill": getRandElem(blockCols) })
+if (colorBuildings) {
+  for (const block of blocks) {
+    drawLines(block, { "fill": getRandElem(Cols) })
+  }
+} else {
+  for (const block of blocks) {
+    drawLines(block)
+  }
+}
+
+if (colorCars) {
+  for (const car of cars) {
+    drawLines(car, { "fill": getRandElem(Cols) })
+  }
+  }else {
+  for (const car of cars) {
+    drawLines(car)
+  }
 }
