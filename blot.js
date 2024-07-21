@@ -52,6 +52,18 @@ function makeCar(startPos, carL, carH) {
     [[x + carL, y], startPos]]);
 }
 
+function drawLanes(startPos, blockWidth, blockHeight, streetSize) {
+  const lw = new bt.Turtle(); 
+  const spacing = streetSize / 2;
+  lw.up();
+  lw.goTo([startPos, startPos-spacing]);
+  lw.down();
+  lw.forward(blockWidth);
+  
+  
+  return lw.lines();
+}
+
 function drawCrosswalks(startPos, bw, bh, streetSize) {
   const cw = new bt.Turtle();
   const crosswalkWidth = streetSize;
@@ -71,10 +83,11 @@ function drawCrosswalks(startPos, bw, bh, streetSize) {
     }
   }
 
-  for (let k = 0; k <= bh; k += bh + streetSize) {
+  const verticalPositions = [0, bw + (0.75 * streetSize)];
+  for (let pos of verticalPositions) {
     for (let l = 0; l < crosswalkWidth; l += stripeWidth + gapWidth) {
       cw.up();
-      cw.goTo([startPos[0] - l, startPos[1] + k]);
+      cw.goTo([startPos[0] - l, startPos[1] + pos]);
       cw.down();
       cw.left(90);
       cw.forward(crossWalkSize);
@@ -82,26 +95,18 @@ function drawCrosswalks(startPos, bw, bh, streetSize) {
     }
   }
 
-  for (let k = 0; k <= bh; k += bh + streetSize) {
-    for (let l = 0; l < crosswalkWidth; l += stripeWidth + gapWidth) {
-      cw.up();
-      cw.goTo([startPos[0] - l, startPos[1] - k]);
-      cw.down();
-      cw.left(90);
-      cw.forward(crossWalkSize);
-      cw.right(90);
-    }
-  }
 
   return cw.lines();
 }
 const crosswalks = []
 const blocks = []
+const lanes = []
 for (let blkVert = 0; blkVert < nBlocks; blkVert++) {
   for (let blkHor = 0; blkHor < nBlocks; blkHor++) {
     let startPos = [blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)]
     blocks.push(makeBlock(startPos, blockWidth, blockHeight))
     crosswalks.push(drawCrosswalks(startPos, blockWidth, blockHeight, streetSize));
+    lanes.push(drawLanes(startPos, blockWidth, blockHeight, streetSize));
   }
 }
 
@@ -195,10 +200,15 @@ border.forward(screenHeight)
 drawLines(border.lines(), { "fill": getRandElem(blockCols) })
 
 blocks.push(...cars)
+
+for (const crosswalk of crosswalks) {
+  drawLines(crosswalk, {"stroke": "white"});
+}
+
 for (const block of blocks) {
   drawLines(block, { "fill": getRandElem(blockCols) })
 }
 
-for (const crosswalk of crosswalks) {
-  drawLines(crosswalk);
+for (const lane of lanes) {
+  drawLines(lane);
 }
