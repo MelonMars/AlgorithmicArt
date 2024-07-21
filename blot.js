@@ -1,19 +1,21 @@
 /*
-Cyberpunk City by github.com/MelonMars
-
-Designed to keep it all chaotic
-Cars are supposed to be like above the street and stuff
+@title: CyberCity
+@author: MelonMars
+@snapshot: snapshot1.png
 */
 
 const blockWidth = 50; //Width of a block
-const blockHeight = 50; //Height of a block
+const blockHeight = 70; //Height of a block
 const nBlocks = 5; // Number of blocks on each row and height
 const streetSize = 20; //Thickness of the street
 const screenHeight = nBlocks * (blockHeight + streetSize);
 const screenWidth = nBlocks * (blockWidth + streetSize);
 const carHeight = 1; //Height of each car
 const carLength = 10; //Length of each car
-const nCars = 5 //Number of cars, similar to number of blocks
+const nCars = 0 //Number of cars, similar to number of blocks
+const stripeFac = 10; //Stripe factor for crosswalks
+const extraGap = 0; //Extra gap between stripes of crosswalk
+const crossWalkSize = 5; //Length of crosswalk
 setDocDimensions(screenWidth, screenHeight);
 
 function getRandElem(arr) {
@@ -33,6 +35,7 @@ function makeBlock(startPos, bw, bh) {
   blk.forward(bw)
   blk.left(90)
   blk.forward(bh)
+  
   return (blk.lines())
 }
 
@@ -49,10 +52,56 @@ function makeCar(startPos, carL, carH) {
     [[x + carL, y], startPos]]);
 }
 
+function drawCrosswalks(startPos, bw, bh, streetSize) {
+  const cw = new bt.Turtle();
+  const crosswalkWidth = streetSize;
+  const stripeWidth = crosswalkWidth / stripeFac;
+  const gapWidth = stripeWidth; 
+
+  for (let i = 0; i <= bw; i += bw + streetSize) {
+    for (let j = 0; j < crosswalkWidth; j += stripeWidth + gapWidth) {
+      cw.up();
+      cw.goTo([startPos[0] + i, startPos[1] - j]);
+      cw.down();
+      cw.forward(crossWalkSize);
+      cw.up();
+      cw.forward(bw - (2 * crossWalkSize));
+      cw.down();
+      cw.forward(crossWalkSize);
+    }
+  }
+
+  for (let k = 0; k <= bh; k += bh + streetSize) {
+    for (let l = 0; l < crosswalkWidth; l += stripeWidth + gapWidth) {
+      cw.up();
+      cw.goTo([startPos[0] - l, startPos[1] + k]);
+      cw.down();
+      cw.left(90);
+      cw.forward(crossWalkSize);
+      cw.right(90);
+    }
+  }
+
+  for (let k = 0; k <= bh; k += bh + streetSize) {
+    for (let l = 0; l < crosswalkWidth; l += stripeWidth + gapWidth) {
+      cw.up();
+      cw.goTo([startPos[0] - l, startPos[1] - k]);
+      cw.down();
+      cw.left(90);
+      cw.forward(crossWalkSize);
+      cw.right(90);
+    }
+  }
+
+  return cw.lines();
+}
+const crosswalks = []
 const blocks = []
 for (let blkVert = 0; blkVert < nBlocks; blkVert++) {
   for (let blkHor = 0; blkHor < nBlocks; blkHor++) {
-    blocks.push(makeBlock([blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)], blockWidth, blockHeight))
+    let startPos = [blkHor * (blockWidth + streetSize), blkVert * (blockHeight + streetSize)]
+    blocks.push(makeBlock(startPos, blockWidth, blockHeight))
+    crosswalks.push(drawCrosswalks(startPos, blockWidth, blockHeight, streetSize));
   }
 }
 
@@ -133,7 +182,23 @@ for (let vertCar = 0; vertCar < nBlocks; vertCar++) {
 }
 
 const blockCols = ["green", "red", "black", "blue", "orange", "navy", "pink", "purple"]
+
+const border = new bt.Turtle()
+border.goTo([0,0])
+border.forward(screenWidth)
+border.left(90)
+border.forward(screenHeight)
+border.left(90)
+border.forward(screenWidth)
+border.left(90)
+border.forward(screenHeight)
+drawLines(border.lines(), { "fill": getRandElem(blockCols) })
+
 blocks.push(...cars)
 for (const block of blocks) {
   drawLines(block, { "fill": getRandElem(blockCols) })
+}
+
+for (const crosswalk of crosswalks) {
+  drawLines(crosswalk);
 }
