@@ -30,6 +30,8 @@ const stuff = 2; //Amount of random stuff to put on each block
 const lChance = 0.5; //Chance that the random thing on the block will be an L shaped polygon or not
 const maxStuffLength = 10; //Max stuff length (MUST BE LESS THAN THE SIZE OF THE BLOCK)
 const minStuffLength = 5; //Minimum stuff length (>0)
+const voronoiBackground = true;
+const voronoiPoints = 5;
 setDocDimensions(screenWidth, screenHeight);
 
 function getRandElem(arr) {
@@ -71,7 +73,6 @@ function makeCar(startPos, carL, carH) {
 
 function drawLanes(bw, bh, streetSize, i, spaceI) {
   if (spaceI != nLanes) {
-    console.log(spaceI, nLanes);
     const lw = new bt.Turtle(); 
     const spacing = streetSize / nLanes;
     lw.up();
@@ -98,6 +99,27 @@ function drawLanes(bw, bh, streetSize, i, spaceI) {
     lw.up();
     return lw.lines();
   }
+}
+
+function calcPerim(lines) {
+  let totLen = 0;
+  for (let i = 0; i < lines.length; i++) {
+        let points = lines[i];
+        let length = 0;
+
+        for (let j = 0; j < points.length - 1; j++) {
+            let x1 = points[j][0];
+            let y1 = points[j][1];
+            let x2 = points[j + 1][0];
+            let y2 = points[j + 1][1];
+
+            length += Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        }
+
+        totLen += length;
+    }
+
+    return totLen;
 }
 
 function drawCrosswalks(startPos, bw, bh, streetSize) {
@@ -281,7 +303,18 @@ for (let vertCar = 0; vertCar < nBlocks; vertCar++) {
   }
 }
 
-const Cols = ["green", "red", "black", "blue", "orange", "navy", "pink", "purple"]
+const Cols = [
+    "#FFFFFF",
+    "#000000",
+    "#FF0000",
+    "#00FF00",
+    "#0000FF",
+    "#FFFF00",
+    "#FFA500",
+    "#800080",
+    "#00FFFF",
+    "#FFC0CB"
+];
 
 const border = new bt.Turtle()
 border.goTo([0,0])
@@ -298,6 +331,73 @@ if (colorBackground) {
   drawLines(border.lines())
 }
 
+function grahamScan(pts) {
+  let stack = []
+  pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  function orientation(p, q, r) {
+        return (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1]);
+  }   
+  const lower = [];
+    for (const p of pts) {
+        while (lower.length >= 2 && orientation(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) {
+            lower.pop();
+        }
+        lower.push(p);
+    }
+  const upper = [];
+    for (let i = pts.length - 1; i >= 0; i--) {
+        const p = pts[i];
+        while (upper.length >= 2 && orientation(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) {
+            upper.pop();
+        }
+        upper.push(p);
+    }
+  lower.pop();
+  upper.pop();
+  return lower.concat(upper);
+}
+
+
+if (voronoiBackground) {
+  let possibleColors = Cols;
+  const ptColors = []
+  for (let i=0; i<voronoiPoints;i++) {
+    const index = bt.randIntInRange(0, possibleColors.length-1);
+    ptColors.push(possibleColors[index]);
+    possibleColors.splice(index, 1);
+  }
+  const pts = []
+  const lines = []
+  for (let i=0; i<voronoiPoints; i++) {
+    pts.push([bt.rand() * screenWidth, bt.rand() * screenHeight]);
+    lines.push([])
+  }
+
+  for (let w=0;w<screenWidth;w++) {
+    for (let h=0;h<screenHeight;h++) {
+      let closestPoint = [0,0];
+      let closestDistance = 100000000;
+      for (const pt of pts) {
+        let distance = Math.sqrt((w-pt[0]) ** 2+(h-pt[1]) ** 2)
+        if (distance < closestDistance) {
+          closestPoint = pt;
+          closestDistance = distance;
+        }
+      }
+      lines[pts.indexOf(closestPoint)].push([w,h])
+    }
+  }
+  for (const tessel of lines) {
+    const tess = new bt.Turtle()
+    tess.up()
+    tess.goTo(tessel[0])
+    tess.down()
+    for (const pt of grahamScan(tessel)) {
+      tess.goTo(pt);
+    }
+    drawLines(tess.lines(), {"fill": ptColors[lines.indexOf(tessel)]})
+  }
+}
 
 for (const crosswalk of crosswalks) {
   drawLines(crosswalk, {"stroke": "white"});
@@ -309,7 +409,11 @@ if (colorBuildings) {
   }
 } else {
   for (const block of blocks) {
-    drawLines(block, {"width": sidewalkWidth})
+    if (calcPerim(block) == 240) {
+      drawLines(block, {"width": sidewalkWidth})
+    } else {
+      drawLines(block)
+    }
   }
 }
 

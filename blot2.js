@@ -4,7 +4,9 @@ const points = 8;
 const nucleusRadius = 1;
 const pointSteps = 60;
 const numberMitochondria = 2;
-const mitochondriaDistance = 5;
+const mitochondriaDistance = 10;
+const mitochondriaWidth = 1;
+const mitochondriaLength = 2.5;
 
 setDocDimensions(width, height);
 
@@ -24,6 +26,46 @@ function drawCircle(pt, col, r) {
 
   drawLines(ptDrawer.lines(), {"fill": col});
 }
+
+function drawOval(pt, col, rX, rY) {
+  const ptDrawer = new bt.Turtle();
+  const pointSteps = 360;
+  const angleStep = 360 / pointSteps;
+  ptDrawer.up();
+  pt[1] = pt[1] - rY;
+  ptDrawer.goTo(pt);
+  ptDrawer.down();
+  
+  for (let j = 0; j < pointSteps; j++) {
+    const angle = j * angleStep * (Math.PI / 180);
+    const x = rX * Math.cos(angle);
+    const y = rY * Math.sin(angle);
+    
+    ptDrawer.goTo([pt[0] + x, pt[1] + y]);
+  }
+  
+  drawLines(ptDrawer.lines());
+  const foldDrawer = new bt.Turtle();
+  const numFolds = 20;
+  const foldLength = rX / 2;
+  foldDrawer.up();
+  foldDrawer.goTo([pt[0] - rX, pt[1]]);
+  foldDrawer.down();
+  
+  for (let i = 0; i < numFolds; i++) {
+    foldDrawer.right(90);
+    foldDrawer.forward(foldLength);
+    foldDrawer.left(90);
+    foldDrawer.forward(2 * rX / numFolds);
+    foldDrawer.left(90);
+    foldDrawer.forward(foldLength);
+    foldDrawer.right(90);
+  }
+  
+  drawLines(foldDrawer.lines())
+
+}
+
 
 function grahamScan(pts) {
   let stack = []
@@ -110,21 +152,19 @@ for (let tessel of lines) {
   tessel = grahamScan(tessel)
   let pts = []
   while (pts.length < numberMitochondria) {
-    const i = Math.floor(Math.random() * tessel.length);
+    const i = Math.floor(bt.rand() * tessel.length);
     const p1 = tessel[i];
     const p2 = tessel[(i + 1) % tessel.length];
-    const t = Math.random();
+    const t = bt.rand();
     const dx = p2[0] - p1[0]
     const dy = p2[1] - p1[1]
     const pt = [p1[0] + t * dx, p1[1] + t * dy]
-    const len = Math.sqrt(dx * dx + dy * dy);
-    const offX = mitochondriaDistance * (dy / len);
-    const offY = mitochondriaDistance * (-dx / len);
-    const offPt = [p1[0] + offX, p2[0] + offY]
+    const len = Math.sqrt(dx * dx + dy * dy)
+    const offX = mitochondriaDistance * (dy / len)
+    const offY = mitochondriaDistance * (-dx / len)
+    const offPt = [pt[0] + offX, pt[1] + offY]
     pts.push(offPt)
-  }
-  for (const pt of pts) {
-    drawCircle(pt, "black", 1)
+    drawOval(offPt, "black", mitochondriaWidth, mitochondriaLength)
   }
 }
 
